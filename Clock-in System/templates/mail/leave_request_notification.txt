@@ -1,0 +1,14 @@
+親愛的 {{ user.name }}，
+
+
+您的請假申請已成功提交：
+
+
+請假類型：{{ leave_type_names.get(leave_request.leave_type, leave_request.leave_type) }}
+開始時間：{{ leave_request.start_datetime.strftime('%Y-%m-%d %H:%M') }}
+結束時間：{{ leave_request.end_datetime.strftime('%Y-%m-%d %H:%M') }}
+請假時間：{{ leave_request.duration_str }}
+請假原因：{{ leave_request.reason }}
+
+
+您的請假申請正在等待審核，請耐心等待。

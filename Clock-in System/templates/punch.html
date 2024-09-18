@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}打卡{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li><a href="{{ url_for('index') }}">首頁</a></li>
+        <li>打卡</li>
+    </ol>
+</nav>
+
+<div class="punch-container">
+    <h1 class="page-title">歡迎, {{ current_user.name }}!</h1>
+    <div class="punch-buttons">
+        {% if 'in' not in punched_types %}
+            <button class="btn btn-primary punch-btn tooltip" data-type="in">
+                <i class="fas fa-sign-in-alt"></i> 上班打卡
+                <span class="tooltiptext">點擊此處進行上班打卡</span>
+            </button>
+        {% endif %}
+        {% if 'out' not in punched_types %}
+            <button class="btn btn-primary punch-btn tooltip" data-type="out">
+                <i class="fas fa-sign-out-alt"></i> 下班打卡
+                <span class="tooltiptext">點擊此處進行下班打卡</span>
+            </button>
+        {% endif %}
+        {% if 'leave' not in punched_types %}
+            <button class="btn btn-secondary punch-btn tooltip" data-type="leave">
+                <i class="fas fa-door-open"></i> 外出打卡
+                <span class="tooltiptext">點擊此處進行外出打卡</span>
+            </button>
+        {% endif %}
+        {% if 'return' not in punched_types %}
+            <button class="btn btn-secondary punch-btn tooltip" data-type="return">
+                <i class="fas fa-door-closed"></i> 返回打卡
+                <span class="tooltiptext">點擊此處進行返回打卡</span>
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.punch-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const punchType = this.dataset.type;
+        fetch('/punch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `punch_type=${punchType}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showNotification(data.message);
+                location.reload();
+            } else {
+                showNotification(data.message);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.punch-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const punchType = this.dataset.type;
+            fetch('/punch', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `punch_type=${punchType}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
