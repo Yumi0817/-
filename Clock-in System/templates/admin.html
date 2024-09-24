@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}管理面板 - 康乃薾幼兒園出缺勤打卡系統{% endblock %}
+
+{% block content %}
+<h2>管理面板</h2>
+
+<form method="GET" action="{{ url_for('admin') }}" class="filter-form">
+    <label for="employee">員工：</label>
+    <select name="employee" id="employee">
+        <option value="">全部</option>
+        {% for user in users %}
+        <option value="{{ user.id }}" {% if user.id|string == selected_employee %}selected{% endif %}>{{ user.name }}</option>
+        {% endfor %}
+    </select>
+    <label for="start_date">開始日期：</label>
+    <input type="date" name="start_date" id="start_date" value="{{ start_date }}">
+    <label for="end_date">結束日期：</label>
+    <input type="date" name="end_date" id="end_date" value="{{ end_date }}">
+
+    <button type="submit" class="btn">篩選</button>
+</form>
+
+<div class="records-container">
+    <h3>打卡記錄</h3>
+    <div class="table-wrapper">
+        {% if records %}
+        <table>
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>打卡時間</th>
+                    <th>打卡類型</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td>{{ record.user.name }}</td>
+                    <td>{{ record.punch_time.astimezone(taiwan_tz).strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ punch_type_names.get(record.punch_type, record.punch_type) }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('edit_record', record_id=record.id) }}" style="display: inline;">
+                            <input type="datetime-local" name="new_time" value="{{ record.punch_time.astimezone(taiwan_tz).strftime('%Y-%m-%dT%H:%M') }}">
+                            <button type="submit" class="btn">編輯</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('delete_record', record_id=record.id) }}" onsubmit="return confirm('確定要刪除這條記錄嗎？');" style="display: inline;">
+                            <button type="submit" class="btn">刪除</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>沒有找到符合條件的打卡記錄。</p>
+        {% endif %}
+    </div>
+
+    <h3>請假記錄</h3>
+    <div class="table-wrapper">
+        {% if leave_requests %}
+        <table>
+            <thead>
+                <tr>
+                    <th>員工</th>
+                    <th>請假類型</th>
+                    <th>開始時間</th>
+                    <th>結束時間</th>
+                    <th>請假時間</th>
+                    <th>原因</th>
+                    <th>人事審批</th>
+                    <th>主管審批</th>
+                    <th>職務代理人</th>
+                    <th>交接事宜</th>
+                    <th>代理確認狀態</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in leave_requests %}
+                <tr>
+                    <td>{{ request.user.name }}</td>
+                    <td>{{ leave_type_names.get(request.leave_type, request.leave_type) }}</td>
+                    <td>{{ request.start_datetime.astimezone(taiwan_tz).strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ request.end_datetime.astimezone(taiwan_tz).strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ request.duration_str }}</td>
+                    <td>{{ request.reason }}</td>
+                    <td>{{ '待審批' if request.hr_approval == 0 else '已批准' if request.hr_approval == 1 else '已駁回' }}</td>
+                    <td>{{ '待審批' if request.manager_approval == 0 else '已批准' if request.manager_approval == 1 else '已駁回' }}</td>
+                    <td>{{ request.deputy.name if request.deputy else '無' }}</td>
+                    <td>{{ request.handover_notes }}</td>
+                    <td>{{ '已確認' if request.deputy_confirmation else '未確認' }}</td>
+                    <td>
+                        {% if current_user.role == '人事' and request.hr_approval == 0 %}
+                            <form method="POST" action="{{ url_for('approve_leave', request_id=request.id, approver_type='hr') }}" style="display: inline;">
+                                <button type="submit" class="btn">批准</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('reject_leave', request_id=request.id, approver_type='hr') }}" style="display: inline;">
+                                <button type="submit" class="btn">駁回</button>
+                            </form>
+                        {% elif current_user.role == '主管' and request.manager_approval == 0 %}
+                            <form method="POST" action="{{ url_for('approve_leave', request_id=request.id, approver_type='manager') }}" style="display: inline;">
+                                <button type="submit" class="btn">批准</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('reject_leave', request_id=request.id, approver_type='manager') }}" style="display: inline;">
+                                <button type="submit" class="btn">駁回</button>
+                            </form>
+                        {% elif current_user.role == '管理員' %}
+                            {% if request.hr_approval == 0 %}
+                                <form method="POST" action="{{ url_for('approve_leave', request_id=request.id, approver_type='hr') }}" style="display: inline;">
+                                    <button type="submit" class="btn">批准 (人事)</button>
+                                </form>
+                            {% endif %}
+                            {% if request.manager_approval == 0 %}
+                                <form method="POST" action="{{ url_for('approve_leave', request_id=request.id, approver_type='manager') }}" style="display: inline;">
+                                    <button type="submit" class="btn">批准 (主管)</button>
+                                </form>
+                            {% endif %}
+                            {% if request.hr_approval == 0 or request.manager_approval == 0 %}
+                                <form method="POST" action="{{ url_for('reject_leave', request_id=request.id, approver_type='admin') }}" style="display: inline;">
+                                    <button type="submit" class="btn">駁回</button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>沒有找到符合條件的請假記錄。</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="pagination">
+    {% if records_pagination.has_prev %}
+        <a href="{{ url_for('admin', page=records_pagination.prev_num, employee=selected_employee, start_date=start_date, end_date=end_date) }}">&laquo; 上一頁</a>
+    {% endif %}
+
+    {% for page_num in range(1, total_pages + 1) %}
+        {% if page_num == records_pagination.page %}
+            <strong>{{ page_num }}</strong>
+        {% else %}
+            <a href="{{ url_for('admin', page=page_num, employee=selected_employee, start_date=start_date, end_date=end_date) }}">{{ page_num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if records_pagination.has_next %}
+        <a href="{{ url_for('admin', page=records_pagination.next_num, employee=selected_employee, start_date=start_date, end_date=end_date) }}">下一頁 &raquo;</a>
+    {% endif %}
+</div>
+{% endblock %}

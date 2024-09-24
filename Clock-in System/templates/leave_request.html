@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>請假申請</h1>
+<form method="POST" class="leave-request-form">
+    <div class="form-group">
+        <label for="leave_type">請假類型：</label>
+        <select id="leave_type" name="leave_type" required class="form-control">
+            {% for key, value in leave_type_names.items() %}
+                <option value="{{ key }}">{{ value }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="start_datetime">開始時間：</label>
+        <input type="datetime-local" id="start_datetime" name="start_datetime" required class="form-control">
+    </div>
+    <div class="form-group">
+        <label for="end_datetime">結束時間：</label>
+        <input type="datetime-local" id="end_datetime" name="end_datetime" required class="form-control">
+    </div>
+    <div class="form-group">
+        <label for="reason">請假原因：</label>
+        <textarea id="reason" name="reason" required class="form-control" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="deputy">職務代理人：</label>
+        <select id="deputy" name="deputy" required class="form-control">
+            {% for user in users %}
+                {% if user.id != current_user.id %}
+                    <option value="{{ user.id }}">{{ user.name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label for="handover_notes">交接事宜：</label>
+        <textarea id="handover_notes" name="handover_notes" required class="form-control" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">提交申請</button>
+</form>
+{% endblock %}

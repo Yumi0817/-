@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Punch{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ current_user.name }}!</h1>
+<form method="POST">
+    {% if 'in' not in punched_types %}
+        <button type="submit" name="punch_type" value="in">上班打卡</button>
+    {% endif %}
+    {% if 'out' not in punched_types %}
+        <button type="submit" name="punch_type" value="out">下班打卡</button>
+    {% endif %}
+    {% if 'leave' not in punched_types %}
+        <button type="submit" name="punch_type" value="leave">外出打卡</button>
+    {% endif %}
+    {% if 'return' not in punched_types %}
+        <button type="submit" name="punch_type" value="return">返回打卡</button>
+    {% endif %}
+</form>
+{% endblock %}

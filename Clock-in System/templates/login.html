@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}登入{% endblock %}
+
+{% block content %}
+<h1>登入</h1>
+<form method="POST" id="login-form">
+    <div class="form-group">
+        <label for="email">電子郵件：</label>
+        <input type="email" id="email" name="email" required class="form-control">
+    </div>
+    <div class="form-group">
+        <label for="password">密碼：</label>
+        <input type="password" id="password" name="password" required class="form-control">
+    </div>
+    <button type="submit" class="btn btn-primary">登入</button>
+</form>
+
+<div id="loading" class="loading-overlay" style="display: none;">
+    <div class="spinner"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded and parsed');
+    var form = document.getElementById('login-form');
+    console.log('Login form:', form);
+    
+    form.addEventListener('submit', function(event) {
+        console.log('Form submitted');
+        event.preventDefault();
+        document.getElementById('loading').style.display = 'flex';
+        console.log('Loading overlay displayed');
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => {
+            console.log('Fetch response:', response);
+            return response.json();
+        }).then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                window.location.href = data.redirect;
+            } else {
+                alert(data.message || '登入失敗，請檢查您的電子郵件和密碼。');
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            alert('登入過程中發生錯誤，請稍後再試。');
+        }).finally(() => {
+            console.log('Hiding loading overlay');
+            document.getElementById('loading').style.display = 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}康乃薾幼兒園出缺勤打卡系統{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body class="page-wrapper">
+    <a href="#main-content" class="skip-to-content">跳到主要內容</a>
+
+    <img src="{{ url_for('static', filename='吉祥物/1.png') }}" alt="獅子吉祥物" class="mascot-bottom-right">
+    <img src="{{ url_for('static', filename='吉祥物/6.png') }}" alt="飛行獅子吉祥物" class="mascot-top-left">
+
+    <header>
+        <nav>
+            <div class="container">
+                <img src="{{ url_for('static', filename='吉祥物/logo.png') }}" alt="康乃薾幼兒園logo" class="logo">
+                <button class="nav-toggle" aria-label="切換導覽">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="nav-links">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('punch') }}" class="nav-link"><i class="fas fa-clock"></i> 打卡</a>
+                        <a href="{{ url_for('leave_request') }}" class="nav-link"><i class="fas fa-calendar-alt"></i> 請假申請</a>
+                        <a href="{{ url_for('attendance_query') }}" class="nav-link"><i class="fas fa-search"></i> 出缺勤查詢</a>
+                        <a href="{{ url_for('leave_statistics') }}" class="nav-link"><i class="fas fa-chart-bar"></i> 請假統計</a>
+                        <a href="{{ url_for('deputy_confirmation') }}" class="nav-link"><i class="fas fa-user-check"></i> 職務代理確認</a>
+                        {% if current_user.role in ['管理員', '人事', '主管'] %}
+                            <a href="{{ url_for('admin') }}" class="nav-link"><i class="fas fa-cog"></i> 管理</a>
+                            <a href="{{ url_for('add_user') }}" class="nav-link"><i class="fas fa-user-plus"></i> 新增用戶</a>
+                        {% endif %}
+                        <a href="{{ url_for('logout') }}" class="nav-link"><i class="fas fa-sign-out-alt"></i> 登出</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="nav-link"><i class="fas fa-sign-in-alt"></i> 登入</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main id="main-content" class="container">
+        <h1 class="system-title">康乃薾幼兒園出缺勤打卡系統</h1>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            {% if current_user.is_authenticated %}
+            <div class="overview">
+                <h2>系統概覽</h2>
+                <p><i class="fas fa-user"></i> 歡迎，{{ current_user.name }}</p>
+                <p><i class="fas fa-calendar-day"></i> 今天是 <span id="current-date"></span></p>
+                <p><i class="fas fa-clock"></i> 目前時間：<span id="current-time"></span></p>
+            </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 康乃薾幼兒園. 版權所有.</p>
+        </div>
+    </footer>
+
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const dateElement = document.getElementById('current-date');
+            const timeElement = document.getElementById('current-time');
+
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            dateElement.textContent = now.toLocaleDateString('zh-TW', options);
+
+            timeElement.textContent = now.toLocaleTimeString('zh-TW');
+        }
+
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // 添加導覽列切換功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const navToggle = document.querySelector('.nav-toggle');
+            const navLinks = document.querySelector('.nav-links');
+
+            navToggle.addEventListener('click', function() {
+                navLinks.classList.toggle('active');
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        });
+
+        window.addEventListener('beforeunload', function() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        });
+
+        function showLoading() {
+            console.log('Showing loading overlay');
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            console.log('Hiding loading overlay');
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        // 在頁面加載完成後隱藏載入動畫
+        window.addEventListener('load', function() {
+            console.log('Window fully loaded');
+            hideLoading();
+        });
+
+        // 在頁面開始卸載時顯示載入動畫
+        window.addEventListener('beforeunload', function() {
+            console.log('Before unload event');
+            showLoading();
+        });
+    </script>
+</body>
+</html>

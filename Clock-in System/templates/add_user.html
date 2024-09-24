@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}新增用戶{% endblock %}
+
+{% block content %}
+<h1>新增用戶</h1>
+<form method="POST">
+    <div>
+        <label for="username">用戶名：</label>
+        <input type="text" id="username" name="username" required>
+    </div>
+    <div>
+        <label for="email">電子郵件：</label>
+        <input type="email" id="email" name="email" required>
+    </div>
+    <div>
+        <label for="name">姓名：</label>
+        <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+        <label for="role">角色：</label>
+        <select id="role" name="role" required>
+            {% if role_options %}
+                {% for role, chinese_role in role_options.items() %}
+                    <option value="{{ role }}">{{ chinese_role }}</option>
+                {% endfor %}
+            {% else %}
+                <option value="employee">員工</option>
+                <option value="manager">主管</option>
+                <option value="hr">人事</option>
+                <option value="admin">管理員</option>
+            {% endif %}
+        </select>
+    </div>
+    <div>
+        <label for="hire_date">到職日：</label>
+        <input type="date" id="hire_date" name="hire_date" required>
+    </div>
+    <div>
+        <label for="normal_work_start">正常上班時間：</label>
+        <input type="time" id="normal_work_start" name="normal_work_start" required>
+    </div>
+    <div>
+        <label for="normal_work_end">正常下班時間：</label>
+        <input type="time" id="normal_work_end" name="normal_work_end" required>
+    </div>
+    <button type="submit">新增用戶</button>
+</form>
+{% endblock %}

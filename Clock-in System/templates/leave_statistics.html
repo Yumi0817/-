@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>請假統計</h1>
+
+<!-- 篩選表單 -->
+<form method="get" class="mb-4">
+    {% if current_user.role in ['管理員', '人事', '主管'] %}
+    <label for="user_id">員工：</label>
+    <select id="user_id" name="user_id">
+        <option value="">所有員工</option>
+        {% for user in users %}
+            <option value="{{ user.id }}" {% if user.id|string == selected_user_id %}selected{% endif %}>{{ user.name }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+
+    <label for="start_date">開始日期：</label>
+    <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+
+    <label for="end_date">結束日期：</label>
+    <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+
+    <label for="leave_type">請假類型：</label>
+    <select id="leave_type" name="leave_type">
+        <option value="">所有類型</option>
+        {% for key, value in leave_type_names.items() %}
+            <option value="{{ key }}" {% if key == selected_leave_type %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-primary">篩選</button>
+</form>
+
+<!-- 數據顯示 -->
+{% if statistics %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>員工</th>
+                {% for leave_type, leave_name in leave_type_names.items() %}
+                    <th>{{ leave_name }}</th>
+                {% endfor %}
+                <th>總計</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user_id, leave_data in statistics.items() %}
+                <tr>
+                    <td>{{ user_names[user_id] }}</td>
+                    {% set total = 0 %}
+                    {% for leave_type in leave_type_names %}
+                        {% set hours = leave_data.get(leave_type, 0) %}
+                        <td>{{ "%.1f"|format(hours) }}</td>
+                        {% set total = total + hours %}
+                    {% endfor %}
+                    <td>{{ "%.1f"|format(total) }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>沒有找到符合條件的請假記錄。</p>
+{% endif %}
+
+<!-- 圖表容器 -->
+<div class="chart-container" style="position: relative; height:40vh; width:80vw">
+    <canvas id="leaveChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var ctx = document.getElementById('leaveChart').getContext('2d');
+    var leaveChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ user_names | tojson }},
+            datasets: [
+                {% for leave_type, leave_name in leave_type_names.items() %}
+                {
+                    label: '{{ leave_name }}',
+                    data: [
+                        {% for user_id in statistics %}
+                        {{ statistics[user_id][leave_type] }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: getRandomColor(),
+                },
+                {% endfor %}
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true
+                }
+            }
+        }
+    });
+
+    function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+</script>
+
+{% endblock %}
